@@ -2,8 +2,11 @@ package com.EngCode.BFF_Agendador_de_Tarefas;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
 
 @SpringBootApplication
+@EnableFeignClients
 public class BffAgendadorDeTarefasApplication {
 
 	public static void main(String[] args) {

@@ -8,6 +8,7 @@ package com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.client;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.in.TarefasDTORequest;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.TarefasDTOResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
@@ -38,5 +39,6 @@ public interface EmailClient {
      * GET http://servidor/usuario?email=teste@mail.com
      * Header: Authorization: Bearer tokenAqui
      */
+    @PostMapping
      void enviarEmail (@RequestBody TarefasDTOResponse tarefasDTOResponse);
 }

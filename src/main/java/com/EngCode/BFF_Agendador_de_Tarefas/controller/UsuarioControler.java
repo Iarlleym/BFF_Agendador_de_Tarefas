@@ -47,7 +47,7 @@ public class UsuarioControler {
     // SWAGGER: Documentação do endpoint de Cadastro.
     @Operation(summary = "Salvar Usuários", description = "Cria um novo usuário na base de dados.")
     @ApiResponse(responseCode = "200", description = "Usuário Salvo Com Sucesso.")
-    @ApiResponse(responseCode = "400", description = "Dados Inválidos ou E-mail Já Cadastrado.")
+    @ApiResponse(responseCode = "409", description = "Usuário Já Cadastrado.")
     @ApiResponse(responseCode = "500" , description = "Erro de Servidor.")
     public ResponseEntity<UsuarioDTOResponse> salvaUsuario(@RequestBody UsuarioDTORequest usuarioDTO) {
         // FUNÇÃO: Encaminha os dados do DTO para o Microsserviço de Usuários.

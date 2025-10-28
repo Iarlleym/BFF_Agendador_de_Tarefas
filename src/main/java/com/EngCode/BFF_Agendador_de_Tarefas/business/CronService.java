@@ -86,6 +86,7 @@ public class CronService {
      * CONCEITO: Pass-through (Passagem direta) para o UsuarioService.
      */
     public String login (LoginDTORequest loginDTORequest){
+
         return usuarioService.loginUsuario(loginDTORequest);
     }
 

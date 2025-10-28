@@ -3,17 +3,21 @@ package com.EngCode.BFF_Agendador_de_Tarefas.controller;
 // BLOCÃO 1: IMPORTAÇÕES E FERRAMENTAS
 // -------------------------------------------------------------------------
 
-import com.EngCode.BFF_Agendador_de_Tarefas.business.TarefasService;
-import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.in.TarefasDTORequest;
-import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.TarefasDTOResponse;
-import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.enums.StatusNotificacaoEnum;
+import com.EngCode.BFF_Agendador_de_Tarefas.business.TarefasService; // Serviço do BFF (orquestrador Feign)
+import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.in.TarefasDTORequest; // DTO de Requisição (dados de entrada)
+import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.TarefasDTOResponse; // DTO de Resposta (dados de saída)
+import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.enums.StatusNotificacaoEnum; // Enum de status
+
+// Importações do Swagger (OpenAPI 3) para documentação
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.security.SecurityConfig;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation; // Define a operação da API (sumário, descrição)
+import io.swagger.v3.oas.annotations.responses.ApiResponse; // Define as possíveis respostas HTTP
+import io.swagger.v3.oas.annotations.security.SecurityRequirement; // Indica que o Token é necessário
+import io.swagger.v3.oas.annotations.tags.Tag; // Agrupa as rotas em categorias
+
+// Importações do Spring e Lombok
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat; // Para formatação de data/hora na URL
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,11 +32,12 @@ import java.util.List;
 @RequestMapping("/tarefas") // Define o endpoint base (/tarefas)
 @RequiredArgsConstructor // Lombok: Cria o construtor com as dependências obrigatórias (final)
 @Tag(name = "Tarefas", description = "Endpoints para gerenciamento e consulta de tarefas agendadas.")
-// SWAGGER: Define a tag que agrupa todas as rotas de Tarefas na documentação.
+// SWAGGER: Define a tag que agrupa as rotas.
 @SecurityRequirement(name = SecurityConfig.SECURITY_SCHEME)
+// SWAGGER: Indica globalmente que estas rotas requerem autenticação (o nome 'SECURITY_SCHEME' deve estar configurado em uma classe de configuração do Swagger).
 public class TarefasController {
 
-    private final TarefasService tarefasService; // Injeta o serviço do BFF que contém a lógica de orquestração (FeignClient)
+    private final TarefasService tarefasService; // Injeta o serviço do BFF (orquestrador Feign).
 
     // BLOCÃO 3: ENDPOINTS DE CRIAÇÃO (POST)
     // -------------------------------------------------------------------------
@@ -45,9 +50,11 @@ public class TarefasController {
     @ApiResponse(responseCode = "500", description = "Erro de Servidor.")
     public ResponseEntity<TarefasDTOResponse> gravarTarefas(@RequestBody TarefasDTORequest tarefasDTO,
                                                             @RequestHeader(name = "Authorization", required = false) String token) {
-        // @RequestHeader("Authorization") String token: Captura o Token JWT para repasse.
-        // FUNÇÃO: O BFF repassa a requisição para o Microsserviço de Tarefas.
-        return ResponseEntity.ok(tarefasService.gravarTarefa(token, tarefasDTO)); // Chama o service e retorna o DTO salvo
+        // @RequestHeader(required = false): Captura o Token JWT. O 'required=false' permite testar,
+        // mas a validação real será feita no Microsserviço de Tarefas.
+
+        // FUNÇÃO: O BFF repassa o DTO de entrada e o Token para o Service.
+        return ResponseEntity.ok(tarefasService.gravarTarefa(token, tarefasDTO)); // Chama o service e retorna o DTO de Resposta.
     }
 
     // BLOCÃO 4: ENDPOINTS DE CONSULTA (GET)
@@ -62,9 +69,9 @@ public class TarefasController {
     public ResponseEntity<List<TarefasDTOResponse>> buscarListaTarefasPorPeriodo(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicial, // Data inicial
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFinal,// Data final
-            @RequestHeader(name = "Authorization", required = false) String token
+            @RequestHeader(name = "Authorization", required = false) String token // Token repassado para a validação.
     ) {
-        // FUNÇÃO: Encaminha os parâmetros de data para o serviço do BFF. Não precisa de token aqui se o endpoint original for público ou se a validação for no Service.
+        // FUNÇÃO: Encaminha os parâmetros de data e o Token para o serviço do BFF.
         return ResponseEntity.ok(tarefasService.buscaTarefasAgendadasPorPeriodo(dataInicial, dataFinal, token)); // Retorna lista filtrada
     }
 
@@ -75,9 +82,9 @@ public class TarefasController {
     @ApiResponse(responseCode = "401", description = "Não Autorizado (Token Inválido).")
     @ApiResponse(responseCode = "500", description = "Erro de Servidor.")
     public ResponseEntity<List<TarefasDTOResponse>> buscarListaTarefasPorEmail(
-            @RequestHeader(name = "Authorization", required = false) String token) { // Captura o Token para identificar o usuário.
+            @RequestHeader(name = "Authorization", required = false) String token) { // Captura o Token para identificação.
 
-        // FUNÇÃO: O BFF repassa o token para o Microsserviço de Tarefas que extrai o e-mail/ID.
+        // FUNÇÃO: O BFF repassa o token para o Service, que faz a chamada Feign.
         return ResponseEntity.ok(tarefasService.buscaTarefasPorEmail(token)); // Retorna lista de tarefas do usuário
     }
 
@@ -92,9 +99,10 @@ public class TarefasController {
     @ApiResponse(responseCode = "404", description = "Tarefa não encontrada.")
     @ApiResponse(responseCode = "500", description = "Erro de Servidor.")
     public ResponseEntity<Void> deletaTarefaPorId(@RequestParam("id") String id,
-                                                  @RequestHeader(name = "Authorization", required = false) String token) { // Adicionando repasse do token
+                                                  @RequestHeader(name = "Authorization", required = false) String token) {
+        // @RequestParam("id"): ID da tarefa a ser deletada.
 
-        tarefasService.deletaTarefaPorId(id, token); // Chama o método de exclusão com o Token
+        tarefasService.deletaTarefaPorId(id, token); // Chama o método de exclusão com o Token.
         return ResponseEntity.ok().build();   // Retorna resposta vazia (200 OK)
     }
 
@@ -108,9 +116,9 @@ public class TarefasController {
     public ResponseEntity<TarefasDTOResponse> alteraStatusDeNotificacao(
             @RequestParam("status") StatusNotificacaoEnum statusNotificacaoEnum, // Novo status (Enum)
             @RequestParam("id") String id, // ID da tarefa
-            @RequestHeader(name = "Authorization", required = false) String token) { // Adicionando repasse do token
+            @RequestHeader(name = "Authorization", required = false) String token) { // Repasse do Token.
 
-        // FUNÇÃO: O BFF repassa o status, o ID e o token para o Microsserviço de Tarefas.
+        // FUNÇÃO: O BFF repassa os dados e o Token para o Microsserviço de Tarefas.
         return ResponseEntity.ok(tarefasService.alteraStatusDaTarefa(statusNotificacaoEnum, id, token)); // Retorna tarefa atualizada
     }
 
@@ -123,7 +131,7 @@ public class TarefasController {
     @ApiResponse(responseCode = "500", description = "Erro de Servidor.")
     public ResponseEntity<TarefasDTOResponse> updateDeTarefas(@RequestBody TarefasDTORequest tarefasDTO,
                                                               @RequestParam("id") String id,
-                                                              @RequestHeader(name = "Authorization", required = false) String token) { // Adicionando repasse do token
+                                                              @RequestHeader(name = "Authorization", required = false) String token) { // Repasse do Token.
 
         // FUNÇÃO: O BFF envia o DTO completo, o ID e o Token de autorização.
         return ResponseEntity.ok(tarefasService.updateDeTarefas(tarefasDTO, id, token)); // Retorna DTO atualizado após o save

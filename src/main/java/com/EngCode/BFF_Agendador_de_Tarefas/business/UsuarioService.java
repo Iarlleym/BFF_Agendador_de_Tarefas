@@ -12,6 +12,7 @@ import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.in.UsuarioDTORequest;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.EnderecoDTOResponse;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.TelefoneDTOResponse;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.UsuarioDTOResponse;
+import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.ViaCepDTORespose;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.client.UsuarioClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -110,4 +111,9 @@ public class UsuarioService {
         // FUNÇÃO: Delega a requisição POST para o Feign, enviando os dados e o Token.
         return usuarioClient.cadastraTelefone(telefoneDTO, token);
     }
+
+    public ViaCepDTORespose buscarEnderecoViaCep (String cep) {
+        return usuarioClient.buscarDadosDeCep(cep);
+    }
+
 }

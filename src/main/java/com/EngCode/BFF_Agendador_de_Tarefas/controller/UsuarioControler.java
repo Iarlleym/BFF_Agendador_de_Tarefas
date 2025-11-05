@@ -13,6 +13,7 @@ import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.in.UsuarioDTORequest;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.EnderecoDTOResponse;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.TelefoneDTOResponse;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.UsuarioDTOResponse;
+import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.ViaCepDTORespose;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -178,4 +179,22 @@ public class UsuarioControler {
 
         return ResponseEntity.ok(usuarioService.cadastraTelefone(token, telefoneDTO));
     }
+
+    // BLOCÃO 7: ENDPOINT DE CONSUMO DE API EXTERNA (ViaCEP)
+    // -------------------------------------------------------------------------
+
+    @GetMapping ("/endereco/{cep}")
+    // SWAGGER: Documentação do endpoint de consulta ViaCEP.
+    @Operation(summary = "Consultar Endereço por CEP", description = "Busca e retorna dados de endereço utilizando a API ViaCEP. Não requer autenticação.")
+    @ApiResponse(responseCode = "200", description = "Endereço encontrado e retornado com sucesso.")
+    @ApiResponse(responseCode = "400", description = "CEP inválido (Formato incorreto ou caracteres ilegais).")
+    @ApiResponse(responseCode = "404", description = "CEP não encontrado na base de dados da ViaCEP.")
+    @ApiResponse(responseCode = "500", description = "Erro de Servidor (Falha na comunicação com a ViaCEP).")
+    public ResponseEntity <ViaCepDTORespose> buscarDadosDeCep (@PathVariable ("cep") String cep) {
+        // @PathVariable ("cep"): Pega a variável de caminho (o CEP) da URL.
+
+        // Chama o serviço ViaCEP para executar a validação e a chamada Feign.
+        return ResponseEntity.ok(usuarioService.buscarEnderecoViaCep(cep));
+    }
+
 }

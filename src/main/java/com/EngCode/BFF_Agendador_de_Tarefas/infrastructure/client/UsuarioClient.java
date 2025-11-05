@@ -12,7 +12,11 @@ import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.in.UsuarioDTORequest;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.EnderecoDTOResponse;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.TelefoneDTOResponse;
 import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.UsuarioDTOResponse;
+import com.EngCode.BFF_Agendador_de_Tarefas.business.dto.out.ViaCepDTORespose;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -109,5 +113,12 @@ public interface UsuarioClient {
     TelefoneDTOResponse cadastraTelefone(
             @RequestBody TelefoneDTORequest telefoneDTO,
             @RequestHeader("Authorization") String token); // Token para identificar o usuário.
+
+    // BLOCÃO 7: ENDPOINT DE CONSUMO DE API EXTERNA (ViaCEP)
+    // -------------------------------------------------------------------------
+
+    @GetMapping ("usuario/endereco/{cep}")
+    ViaCepDTORespose buscarDadosDeCep (@PathVariable ("cep") String cep);
+
 
 }

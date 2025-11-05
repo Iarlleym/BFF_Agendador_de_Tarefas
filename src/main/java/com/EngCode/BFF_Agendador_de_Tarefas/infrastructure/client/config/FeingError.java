@@ -2,76 +2,95 @@ package com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.client.config;
 
 // BLOCÃO 1: IMPORTAÇÕES E EXCEÇÕES NECESSÁRIAS
 // -------------------------------------------------------------------------
+
+// Importa todas as exceções personalizadas que o Feign traduzirá.
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.BusinessException;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.ConflictException;
+import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.IllegalArgumentException;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.ResourceNotFoundException;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.UnauthorizedException;
-import feign.Response;
-import feign.codec.ErrorDecoder;
-import feign.FeignException; // Importado para tratamento de erros genéricos
+
+import feign.Response; // Objeto de resposta HTTP vindo do Microsserviço
+import feign.codec.ErrorDecoder; // Interface que obriga a implementação do método decode.
+
+import java.io.IOException; // Necessário para tratar erros de I/O (leitura do corpo da resposta).
+import java.nio.charset.StandardCharsets;
+import java.util.Objects; // Usado para verificação de objetos (ex: se é nulo).
 
 public class FeingError implements ErrorDecoder {
-// IMPLEMENTAÇÃO: Esta interface é obrigatória para personalizar como o Feign trata os erros HTTP.
+// IMPLEMENTAÇÃO: Esta classe implementa ErrorDecoder para personalizar como o Feign trata erros HTTP.
 
     @Override
     // MÉTODO OBRIGATÓRIO: Chamado pelo Feign sempre que recebe um código HTTP de erro (4xx ou 5xx).
     // String s: O nome do método Feign que falhou (útil para logs).
-    // Response response: O objeto de resposta HTTP (contém o status, headers e corpo).
+    // Response response: O objeto de resposta HTTP, contendo o status e o corpo do erro.
     public Exception decode(String s, Response response) {
 
-        // Vamos tentar ler a mensagem do corpo da resposta (se houver) para torná-lo mais informativo.
-        String erroPadrao = "Erro na comunicação com o Microsserviço de Tarefas.";
 
-        // Estratégia de Fallback: Se a resposta do outro serviço incluir uma mensagem no cabeçalho, a usamos.
-        String mensagemDetalhada = response.reason() != null ? response.reason() : erroPadrao;
+        // BLOCÃO 2: EXTRAÇÃO DA MENSAGEM DO CORPO (Lógica Auxiliar)
+        // -------------------------------------------------------------------------
+        // Chama o método auxiliar para tentar ler a mensagem detalhada do corpo da resposta HTTP.
+        String mensagemErro = mensagemErro(response);
 
 
         switch (response.status()) {
 
-            // -----------------------------------------------------------
-            // TRATAMENTO DE ERROS MAIS COMUNS (COMPLETO)
-            // -----------------------------------------------------------
+            // BLOCÃO 3: MAPEAMENTO DE STATUS HTTP PARA EXCEÇÕES JAVA
+            // -------------------------------------------------------------------------
 
             case 400: // Bad Request (Requisição Malfeita)
-                // Lançado quando a validação falha no microsserviço de destino (ex: campos obrigatórios ausentes).
-                // MENSAGEM MELHORADA: Foca no erro do cliente.
-                return new BusinessException(
-                        "Erro 400 - Requisição Inválida: Verifique os dados enviados.");
+                // O BFF traduz o HTTP 400 (dados inválidos/má formação) para a exceção de Argumento Inválido.
+                return new IllegalArgumentException(
+                        "Erro: " + mensagemErro);
 
             case 401: // Unauthorized (Não Autorizado)
-                // Lançado quando o Token JWT está ausente, é inválido ou expirou.
-                // MENSAGEM MELHORADA: Mais específica sobre o problema de autenticação.
+                // Traduz o HTTP 401 (falha de autenticação/Token) para UnauthorizedException.
                 return new UnauthorizedException(
-                        "Erro 401: Acesso Negado. Token JWT inválido ou ausente.");
+                        "Erro: " + mensagemErro);
 
             case 403: // Forbidden (Acesso Proibido)
-                // Lançado quando o usuário está logado, mas não tem permissão para acessar aquele recurso (ex: tentar deletar a tarefa de outro usuário).
-                // MENSAGEM MELHORADA: Uso do 403 para indicar a falha na autorização.
-                return new UnauthorizedException(
-                        "Erro 403: Usuário não autorizado a realizar esta operação neste recurso.");
+                // Traduz o HTTP 403 (falha de autorização/permissão) para UnauthorizedException.
+                return new ResourceNotFoundException(
+                        "Erro: " + mensagemErro);
 
             case 404: // Not Found (Recurso não Encontrado)
-                // Lançado quando a tarefa ou recurso buscado não existe (ex: buscar por ID inexistente).
-                // MENSAGEM MELHORADA: Mais específica sobre a natureza do erro.
+                // Traduz o HTTP 404 (recurso inexistente) para ResourceNotFoundException.
                 return new ResourceNotFoundException(
-                        "Erro 404: O recurso solicitado (Tarefa ou ID) não foi encontrado.");
+                        "Erro: " + mensagemErro);
 
-            case 409: // Conflict (Conflito) - SEU CASO ORIGINAL
-                // Lançado quando há conflito de dados (ex: tarefa com nome duplicado se houver regra).
-                // MENSAGEM MELHORADA: Direto ao ponto.
+            case 409: // Conflict (Conflito)
+                // Traduz o HTTP 409 (conflito de dados, ex: e-mail duplicado) para ConflictException.
                 return new ConflictException(
-                        "Erro 409: Conflito de dados. O atributo enviado já está registrado.");
+                        "Erro: " + mensagemErro);
 
             case 500: // Internal Server Error
-                // Lançado para falhas internas inesperadas no Microsserviço de Agendamento.
+                // Traduz o HTTP 500 (falha interna não prevista no Microsserviço de Tarefas) para BusinessException.
                 return new BusinessException(
-                        "Erro 500: Falha interna inesperada no Microsserviço de Agendamento de Tarefas.");
+                        "Erro: " + mensagemErro);
 
             default:
-                // Retorno Padrão: Para qualquer outro código (ex: 502, 503, etc.),
-                // o Feign lança a exceção genérica.
-                return new BusinessException("Erro Desconhecido");
+                // Retorno Padrão: Para qualquer outro código (ex: 502, 503, etc.), lança BusinessException.
+                return new BusinessException("Erro: " + mensagemErro);
         }
 
     }
+
+    // BLOCÃO 4: MÉTODO AUXILIAR PARA EXTRAÇÃO DA MENSAGEM
+    // -------------------------------------------------------------------------
+    private String mensagemErro (Response response) {
+        // Tenta ler o corpo da resposta HTTP (onde o Microsserviço envia a mensagem detalhada).
+        try {
+            if (Objects.isNull(response.body())){
+                // Se o corpo da resposta for nulo (sem detalhes), retorna uma string vazia.
+                return "";
+            }
+            // Lê todo o conteúdo binário do corpo da resposta (InputStream) e o converte para String.
+            // Esta é a forma mais robusta de capturar a mensagem de erro que o outro serviço enviou.
+            return new String(response.body().asInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            // Se houver erro ao ler o corpo (ex: stream já fechado), lança uma exceção de Runtime.
+            throw new RuntimeException(e);
+        }
+    }
+
 }

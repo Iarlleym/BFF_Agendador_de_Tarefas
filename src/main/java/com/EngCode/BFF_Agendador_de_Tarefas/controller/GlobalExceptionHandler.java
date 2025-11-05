@@ -7,6 +7,7 @@ package com.EngCode.BFF_Agendador_de_Tarefas.controller;
 
 
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.ConflictException;
+import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.IllegalArgumentException;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.ResourceNotFoundException;
 import com.EngCode.BFF_Agendador_de_Tarefas.infrastructure.exceptions.UnauthorizedException;
 import org.springframework.http.HttpStatus;
@@ -59,4 +60,17 @@ public class GlobalExceptionHandler {
         // Retorna: A mensagem da exceção com o Status HTTP 401 (UNAUTHORIZED).
         return new ResponseEntity<>(unauthorizedException.getMessage(), HttpStatus.UNAUTHORIZED);
     }
+
+    // BLOCÃO 5: TRATAMENTO DE UnauthorizedException (HTTP 401 - Não Autorizado)
+    // -------------------------------------------------------------------------
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    // Mapeia: Diz ao Spring para executar este método quando uma UnauthorizedException for lançada (geralmente relacionada a falha de JWT/permissão).
+    public ResponseEntity<String> handlerIllegalArgumentException(IllegalArgumentException illegalArgumentException) {
+        // FUNÇÃO: Captura a exceção de Não Autorizado.
+
+        // Retorna: A mensagem da exceção com o Status HTTP 401 (UNAUTHORIZED).
+        return new ResponseEntity<>(illegalArgumentException.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
 }
